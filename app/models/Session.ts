@@ -17,6 +17,16 @@ export const stopSession = (s: Session): Session => ({
   stopped: new Date(),
 })
 
+export const addReminder = (s: Session, r: Reminder): Session => ({
+  ...s,
+  reminders: [...s.reminders, r],
+})
+
+export const removeReminder = (s: Session, r: Reminder): Session => ({
+  ...s,
+  reminders: [...s.reminders].filter((r2) => r !== r2),
+})
+
 export interface Reminder {
   name: string
   interval: number
