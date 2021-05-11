@@ -9,7 +9,16 @@ import {
   updateReminderConfig,
 } from "app/models/Session"
 import { FunctionComponent, useCallback, useState } from "react"
-import { Box, Button, Heading, Stack } from "@chakra-ui/react"
+import {
+  Box,
+  Button,
+  FormControl,
+  FormErrorMessage,
+  FormLabel,
+  Heading,
+  Input,
+  Stack,
+} from "@chakra-ui/react"
 import React from "react"
 import { Formik, Field, Form } from "formik"
 
@@ -40,11 +49,27 @@ const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues,
       }}
       render={() => (
         <Form>
-          <label htmlFor="name">Name</label>
-          <Field name="name" placeholder="Name" />
-          <label htmlFor="interval">Interval</label>
-          <Field name="interval" placeholder="30" />
-          <button type="submit">Submit</button>
+          <Stack spacing={4} maxW="md" bgColor="lightgray" p={2}>
+            <Field name="name">
+              {({ field, form }) => (
+                <FormControl isInvalid={form.errors.name && form.touched.name}>
+                  <FormLabel htmlFor="name">Name</FormLabel>
+                  <Input {...field} id="name" placeholder="name" />
+                  <FormErrorMessage>{form.errors.name}</FormErrorMessage>
+                </FormControl>
+              )}
+            </Field>
+            <Field name="interval">
+              {({ field, form }) => (
+                <FormControl isInvalid={form.errors.interval && form.touched.interval}>
+                  <FormLabel htmlFor="interval">Interval</FormLabel>
+                  <Input {...field} id="interval" placeholder="" />
+                  <FormErrorMessage>{form.errors.interval}</FormErrorMessage>
+                </FormControl>
+              )}
+            </Field>
+            <Button type="submit">Submit</Button>
+          </Stack>
         </Form>
       )}
     />
