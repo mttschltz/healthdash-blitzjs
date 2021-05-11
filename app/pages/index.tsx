@@ -131,7 +131,7 @@ const Home: BlitzPage = () => {
     stopped: null,
   }))
   const [isSessionStarted, setIsSessionStarted] = useState(false)
-  const [canSessionStart, setCanSessionStart] = useState(false)
+  const [reminderValidities, setReminderValidities] = useState<boolean[]>([])
 
   const startSessionCallback = useCallback(() => {
     setSession(startSession(session))
@@ -146,8 +146,18 @@ const Home: BlitzPage = () => {
   const addReminderCallback = useCallback(
     (r: Reminder) => {
       setSession(addReminder(session, r))
+      setReminderValidities([...reminderValidities, true])
     },
-    [session]
+    [session, reminderValidities]
+  )
+
+  const updateReminderValidityCallback = useCallback(
+    (i: number, valid: boolean) => {
+      const newReminderValidities = [...reminderValidities]
+      newReminderValidities[i] = valid
+      setReminderValidities(newReminderValidities)
+    },
+    [reminderValidities]
   )
 
   const updateReminderCallback = useCallback(
@@ -156,8 +166,11 @@ const Home: BlitzPage = () => {
       if (newValues.name !== r.name || newValues.interval !== r.interval) {
         setSession(updateReminderConfig(session, i, newValues.name, newValues.interval))
       }
+      const newReminderValidities = [...reminderValidities]
+      newReminderValidities[i] = true
+      setReminderValidities(newReminderValidities)
     },
-    [session]
+    [session, reminderValidities]
   )
 
   return (
@@ -181,10 +194,9 @@ const Home: BlitzPage = () => {
                   onUpdate={(newValues, valid) => {
                     if (!valid) {
                       console.log("not valid :(")
-                      setCanSessionStart(false)
+                      updateReminderValidityCallback(i, false)
                     } else {
                       updateReminderCallback(newValues, i)
-                      setCanSessionStart(true)
                     }
                   }}
                 />
@@ -234,7 +246,7 @@ const Home: BlitzPage = () => {
             onClick={() => {
               startSessionCallback()
             }}
-            disabled={!canSessionStart}
+            disabled={session.reminders.length === 0 || reminderValidities.some((v) => !v)}
           >
             Start
           </Button>
