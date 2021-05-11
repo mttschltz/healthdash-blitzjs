@@ -1,8 +1,55 @@
 import { BlitzPage } from "blitz"
 import Layout from "app/core/layouts/Layout"
-import { addReminder, Reminder, Session, startSession, stopSession } from "app/models/Session"
-import { useCallback, useState } from "react"
+import {
+  addReminder,
+  Reminder,
+  Session,
+  startSession,
+  stopSession,
+  updateReminderConfig,
+} from "app/models/Session"
+import { FunctionComponent, useCallback, useState } from "react"
 import { Box, Button, Heading, Stack } from "@chakra-ui/react"
+import React from "react"
+import { Formik, Field, Form } from "formik"
+
+interface ReminderConfigProps {
+  initialValues: Partial<ReminderConfigValues>
+  onUpdate: (values: ReminderConfigValues) => void
+}
+interface ReminderConfigValues {
+  name: string
+  interval: number
+}
+
+const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues, onUpdate }) => {
+  return (
+    <Formik
+      initialValues={{
+        name: initialValues?.name || "",
+        interval: initialValues?.interval || 0,
+      }}
+      onSubmit={(values) => {
+        return new Promise((resolve) =>
+          setTimeout(() => {
+            console.log("submitted", JSON.stringify(values, null, 2))
+            onUpdate(values)
+            resolve(null)
+          }, 1000)
+        )
+      }}
+      render={() => (
+        <Form>
+          <label htmlFor="name">Name</label>
+          <Field name="name" placeholder="Name" />
+          <label htmlFor="interval">Interval</label>
+          <Field name="interval" placeholder="30" />
+          <button type="submit">Submit</button>
+        </Form>
+      )}
+    />
+  )
+}
 
 const Home: BlitzPage = () => {
   const [session, setSession] = useState<Session>(() => ({
@@ -29,6 +76,16 @@ const Home: BlitzPage = () => {
     [session]
   )
 
+  const updateReminderCallback = useCallback(
+    (newValues: ReminderConfigValues, i: number) => {
+      const r = session.reminders[i]
+      if (newValues.name !== r.name || newValues.interval !== r.interval) {
+        setSession(updateReminderConfig(session, i, newValues.name, newValues.interval))
+      }
+    },
+    [session]
+  )
+
   return (
     <Stack spacing={4}>
       <Box>
@@ -39,19 +96,37 @@ const Home: BlitzPage = () => {
         </ul>
       </Box>
       <Box>
-        <Heading size="md">Reminders</Heading>
-        <Stack spacing={2}>
-          {session?.reminders.map((r, i) => (
-            <Box key={i} spacing={2}>
-              <ul>
-                <li>Name: {r.name}</li>
-                <li>Interval: {r.interval}</li>
-                <li>Completed: {r.completed}</li>
-                <li>Next Due: {r.nextDue?.toISOString()}</li>
-              </ul>
-            </Box>
-          ))}
-        </Stack>
+        {!isSessionStarted && (
+          <>
+            <Heading size="md">Reminder Configs</Heading>
+            <Stack spacing={2}>
+              {session?.reminders.map((r, i) => (
+                <ReminderConfig
+                  key={i}
+                  initialValues={{ interval: r.interval, name: r.name }}
+                  onUpdate={(newValues) => {
+                    updateReminderCallback(newValues, i)
+                  }}
+                />
+              ))}
+            </Stack>
+          </>
+        )}
+        {isSessionStarted && (
+          <>
+            <Heading size="md">Reminders</Heading>
+            {session?.reminders.map((r, i) => (
+              <Box key={i} spacing={2}>
+                <ul>
+                  <li>Name: {r.name}</li>
+                  <li>Interval: {r.interval}</li>
+                  <li>Completed: {r.completed}</li>
+                  <li>Next Due: {r.nextDue?.toISOString()}</li>
+                </ul>
+              </Box>
+            ))}
+          </>
+        )}
       </Box>
       {!isSessionStarted && (
         <Box>

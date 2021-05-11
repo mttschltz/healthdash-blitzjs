@@ -22,6 +22,25 @@ export const addReminder = (s: Session, r: Reminder): Session => ({
   reminders: [...s.reminders, r],
 })
 
+export const updateReminderConfig = (
+  s: Session,
+  i: number,
+  name: string,
+  interval: number
+): Session => ({
+  ...s,
+  reminders: [...s.reminders].map((r, j) => {
+    if (i !== j) {
+      return r
+    }
+    return {
+      ...r,
+      name,
+      interval,
+    }
+  }),
+})
+
 export const removeReminder = (s: Session, r: Reminder): Session => ({
   ...s,
   reminders: [...s.reminders].filter((r2) => r !== r2),
