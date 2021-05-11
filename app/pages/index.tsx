@@ -140,16 +140,18 @@ const Home: BlitzPage = () => {
         {isSessionStarted && (
           <>
             <Heading size="md">Reminders</Heading>
-            {session?.reminders.map((r, i) => (
-              <Box key={i} spacing={2}>
-                <ul>
-                  <li>Name: {r.name}</li>
-                  <li>Interval: {r.interval}</li>
-                  <li>Completed: {r.completed}</li>
-                  <li>Next Due: {r.nextDue?.toISOString()}</li>
-                </ul>
-              </Box>
-            ))}
+            <Stack spacing={4} maxW="md">
+              {session?.reminders.map((r, i) => (
+                <Box key={i} spacing={2} bgColor="lightgreen">
+                  <ul>
+                    <li>Name: {r.name}</li>
+                    <li>Interval: {r.interval}</li>
+                    <li>Completed: {r.completed}</li>
+                    <li>Next Due: {r.nextDue?.toISOString()}</li>
+                  </ul>
+                </Box>
+              ))}
+            </Stack>
           </>
         )}
       </Box>
