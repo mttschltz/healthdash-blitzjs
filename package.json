@@ -31,6 +31,7 @@
     "blitz": "0.34.3",
     "formik": "2.2.6",
     "framer-motion": "3.2.0",
+    "just-debounce-it": "1.5.0",
     "prisma": "~2.20",
     "react": "0.0.0-experimental-6a589ad71",
     "react-dom": "0.0.0-experimental-6a589ad71",

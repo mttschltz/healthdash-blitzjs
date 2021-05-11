@@ -20,7 +20,8 @@ import {
   Stack,
 } from "@chakra-ui/react"
 import React from "react"
-import { Formik, Field, Form } from "formik"
+import { Formik, Field, Form, useFormikContext } from "formik"
+import debounce from "just-debounce-it"
 
 interface ReminderConfigProps {
   initialValues: Partial<ReminderConfigValues>
@@ -29,6 +30,21 @@ interface ReminderConfigProps {
 interface ReminderConfigValues {
   name: string
   interval: number
+}
+
+const AutoSave = ({ debounceMs }) => {
+  const formik = useFormikContext()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSubmit = useCallback(
+    debounce(() => formik.submitForm(), debounceMs),
+    [debounceMs, formik.submitForm, debounce]
+  )
+
+  React.useEffect(() => {
+    debouncedSubmit()
+  }, [debouncedSubmit, formik.values])
+
+  return null
 }
 
 const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues, onUpdate }) => {
@@ -49,6 +65,7 @@ const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues,
       }}
       render={() => (
         <Form>
+          <AutoSave debounceMs={200} />
           <Stack spacing={4} maxW="md" bgColor="lightgray" p={2}>
             <Field name="name">
               {({ field, form }) => (
@@ -68,7 +85,6 @@ const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues,
                 </FormControl>
               )}
             </Field>
-            <Button type="submit">Submit</Button>
           </Stack>
         </Form>
       )}

@@ -6866,6 +6866,11 @@ jstransformer@1.0.0:
     array-includes "^3.1.2"
     object.assign "^4.1.2"
 
+just-debounce-it@1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/just-debounce-it/-/just-debounce-it-1.5.0.tgz#2276448332dd5925e825ba3c524a71da707bf628"
+  integrity sha512-itSWJS5d2DTSCizVJ2Z0Djx/dGmUGfZe7WNfUfVP23+htGcIcPHbEjL4eB8ljojTs/+oYwLexImRRCP0A2WXjA==
+
 jwa@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/jwa/-/jwa-1.4.1.tgz#743c32985cb9e98655530d53641b66c8645b039a"
