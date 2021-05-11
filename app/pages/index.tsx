@@ -25,12 +25,14 @@ import debounce from "just-debounce-it"
 
 interface ReminderConfigProps {
   initialValues: Partial<ReminderConfigValues>
-  onUpdate: (values: ReminderConfigValues) => void
+  onUpdate: (values: ReminderConfigValues, valid: Boolean) => void
 }
 interface ReminderConfigValues {
   name: string
   interval: number
 }
+
+type ReminderConfigValuesStrings = Omit<ReminderConfigValues, "interval"> & { interval: string }
 
 const AutoSave = ({ debounceMs }) => {
   const formik = useFormikContext()
@@ -47,20 +49,50 @@ const AutoSave = ({ debounceMs }) => {
   return null
 }
 
+const validateReminderValues = (
+  onUpdate: (values: ReminderConfigValues, valid: Boolean) => void
+) => (values: ReminderConfigValuesStrings) => {
+  const errors: Partial<ReminderConfigValuesStrings> = {}
+  let hasErrors
+
+  if (!values.name) {
+    errors.name = "Required"
+    hasErrors = true
+  }
+  if (!parseInt(values.interval, 10)) {
+    errors.interval = "Required"
+    hasErrors = true
+  }
+  if (hasErrors) {
+    onUpdate({ name: "", interval: 0 }, false)
+  }
+  return errors
+}
+
 const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues, onUpdate }) => {
   return (
     <Formik
       initialValues={{
         name: initialValues?.name || "",
-        interval: initialValues?.interval || 0,
+        interval: initialValues?.interval || "",
       }}
+      validate={validateReminderValues(onUpdate)}
       onSubmit={(values) => {
         return new Promise((resolve) =>
           setTimeout(() => {
             console.log("submitted", JSON.stringify(values, null, 2))
-            onUpdate(values)
+            onUpdate(
+              {
+                ...values,
+                interval:
+                  typeof values.interval === "number"
+                    ? values.interval
+                    : parseInt(values.interval, 10),
+              },
+              true
+            )
             resolve(null)
-          }, 1000)
+          }, 500)
         )
       }}
       render={() => (
@@ -99,6 +131,7 @@ const Home: BlitzPage = () => {
     stopped: null,
   }))
   const [isSessionStarted, setIsSessionStarted] = useState(false)
+  const [canSessionStart, setCanSessionStart] = useState(false)
 
   const startSessionCallback = useCallback(() => {
     setSession(startSession(session))
@@ -145,8 +178,14 @@ const Home: BlitzPage = () => {
                 <ReminderConfig
                   key={i}
                   initialValues={{ interval: r.interval, name: r.name }}
-                  onUpdate={(newValues) => {
-                    updateReminderCallback(newValues, i)
+                  onUpdate={(newValues, valid) => {
+                    if (!valid) {
+                      console.log("not valid :(")
+                      setCanSessionStart(false)
+                    } else {
+                      updateReminderCallback(newValues, i)
+                      setCanSessionStart(true)
+                    }
                   }}
                 />
               ))}
@@ -195,6 +234,7 @@ const Home: BlitzPage = () => {
             onClick={() => {
               startSessionCallback()
             }}
+            disabled={!canSessionStart}
           >
             Start
           </Button>
