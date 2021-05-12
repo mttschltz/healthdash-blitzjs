@@ -2,6 +2,8 @@
 
 A health dashboard for your workspace. Visual reminders to take a break and stay healthy.
 
+Try it: https://healthdash.onrender.com/
+
 ## Getting Started
 
 A [Blitz.js](https://github.com/blitz-js/blitz) app. Default code hasn't been removed. Can be deployed as a static site.
