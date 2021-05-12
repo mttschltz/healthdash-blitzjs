@@ -1,5 +1,13 @@
-import { Stack, FormControl, FormLabel, Input, FormErrorMessage } from '@chakra-ui/react'
-import { Form, Formik, Field, useFormikContext } from 'formik'
+import {
+  Stack,
+  FormControl,
+  FormLabel,
+  Input,
+  FormErrorMessage,
+  Heading,
+  Box,
+} from '@chakra-ui/react'
+import { Form, Formik, Field, useFormikContext, FieldArray } from 'formik'
 import debounce from 'just-debounce-it'
 import React, { FunctionComponent, useCallback } from 'react'
 
@@ -10,6 +18,7 @@ interface ReminderConfigProps {
 export interface ReminderConfigValues {
   name: string
   interval: number
+  todos: string[]
 }
 
 type ReminderConfigValuesStrings = Omit<ReminderConfigValues, 'interval'> & { interval: string }
@@ -43,8 +52,13 @@ const validateReminderValues = (
     errors.interval = 'Required'
     hasErrors = true
   }
+  if (values.todos.length === 0 || !values.todos?.some(t => t !== '')) {
+    errors.todos = []
+    errors.todos[values.todos.length] = 'At least 1 Todo is required'
+    hasErrors = true
+  }
   if (hasErrors) {
-    onUpdate({ name: '', interval: 0 }, false)
+    onUpdate({ name: '', interval: 0, todos: [] }, false)
   }
   return errors
 }
@@ -57,13 +71,13 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
     <Formik
       initialValues={{
         name: initialValues?.name || '',
-        interval: initialValues?.interval || '',
+        interval: initialValues?.interval + '' || '',
+        todos: [],
       }}
       validate={validateReminderValues(onUpdate)}
       onSubmit={values => {
         return new Promise(resolve =>
           setTimeout(() => {
-            console.log('submitted', JSON.stringify(values, null, 2))
             onUpdate(
               {
                 ...values,
@@ -78,7 +92,7 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
           }, 500)
         )
       }}
-      render={() => (
+      render={({ values, errors }) => (
         <Form>
           <AutoSave debounceMs={200} />
           <Stack spacing={4} maxW='md' bgColor='lightgray' p={2}>
@@ -100,6 +114,41 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
                 </FormControl>
               )}
             </Field>
+            <Heading size='sm'>Todos</Heading>
+            <FieldArray
+              name='todos'
+              render={arrayHelpers => (
+                <div>
+                  {values.todos && values.todos.length > 0 ? (
+                    values.todos.map((todo, index) => (
+                      <div key={index}>
+                        <Field name={`todos.${index}`} />
+                        <button
+                          type='button'
+                          onClick={() => arrayHelpers.remove(index)} // remove a todo from the list
+                        >
+                          [ - ]
+                        </button>
+                        &nbsp;&nbsp;
+                        <button
+                          type='button'
+                          onClick={() => arrayHelpers.insert(index, '')} // insert an empty string at a position
+                        >
+                          [ + ]
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <button type='button' onClick={() => arrayHelpers.push('')}>
+                      {/* show this when user has removed all todos from the list */}
+                      Add
+                    </button>
+                  )}
+                  {/* TODO: Update this and above to use chakra forms */}
+                  <Box>{errors.todos && errors.todos}</Box>
+                </div>
+              )}
+            />
           </Stack>
         </Form>
       )}
