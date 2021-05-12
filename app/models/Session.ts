@@ -9,7 +9,7 @@ export const startSession = (s: Session): Session => ({
   ...s,
   started: new Date(),
   stopped: null,
-  reminders: s.reminders?.map((r) => startReminder(r)),
+  reminders: s.reminders?.map(r => startReminder(r)),
 })
 
 export const stopSession = (s: Session): Session => ({
@@ -43,7 +43,7 @@ export const updateReminderConfig = (
 
 export const removeReminder = (s: Session, r: Reminder): Session => ({
   ...s,
-  reminders: [...s.reminders].filter((r2) => r !== r2),
+  reminders: [...s.reminders].filter(r2 => r !== r2),
 })
 
 export interface Reminder {
@@ -59,7 +59,7 @@ export interface Reminder {
 export const startReminder = (r: Reminder): Reminder => ({
   ...r,
   completed: 0,
-  todos: r.todos?.map((t) => ({
+  todos: r.todos?.map(t => ({
     ...t,
     complete: false,
   })),
@@ -70,7 +70,7 @@ export const startReminder = (r: Reminder): Reminder => ({
 export const completeIteration = (r: Reminder): Reminder => ({
   ...r,
   completed: r.completed + 1,
-  todos: r.todos?.map((t) => ({
+  todos: r.todos?.map(t => ({
     ...t,
     complete: false,
   })),
@@ -80,7 +80,7 @@ export const completeIteration = (r: Reminder): Reminder => ({
 
 export const renewReminder = (r: Reminder): Reminder => ({
   ...r,
-  todos: r.todos?.map((t) => ({
+  todos: r.todos?.map(t => ({
     ...t,
     complete: false,
   })),
@@ -92,7 +92,7 @@ export const isReminderStartable = (r: Reminder) => {
     r.name &&
     r.interval &&
     r.todos?.length &&
-    !r.todos.find((t) => !t.name) &&
+    !r.todos.find(t => !t.name) &&
     (!r.child || isReminderStartable(r.child))
   )
 }

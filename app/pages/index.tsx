@@ -1,5 +1,5 @@
-import { BlitzPage } from "blitz"
-import Layout from "app/core/layouts/Layout"
+import { BlitzPage } from 'blitz'
+import Layout from 'app/core/layouts/Layout'
 import {
   addReminder,
   Reminder,
@@ -7,8 +7,8 @@ import {
   startSession,
   stopSession,
   updateReminderConfig,
-} from "app/models/Session"
-import { FunctionComponent, useCallback, useEffect, useState } from "react"
+} from 'app/models/Session'
+import { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import {
   Box,
   Button,
@@ -18,10 +18,10 @@ import {
   Heading,
   Input,
   Stack,
-} from "@chakra-ui/react"
-import React from "react"
-import { Formik, Field, Form, useFormikContext } from "formik"
-import debounce from "just-debounce-it"
+} from '@chakra-ui/react'
+import React from 'react'
+import { Formik, Field, Form, useFormikContext } from 'formik'
+import debounce from 'just-debounce-it'
 
 interface ReminderConfigProps {
   initialValues: Partial<ReminderConfigValues>
@@ -32,7 +32,7 @@ interface ReminderConfigValues {
   interval: number
 }
 
-type ReminderConfigValuesStrings = Omit<ReminderConfigValues, "interval"> & { interval: string }
+type ReminderConfigValuesStrings = Omit<ReminderConfigValues, 'interval'> & { interval: string }
 
 const AutoSave = ({ debounceMs }) => {
   const formik = useFormikContext()
@@ -56,15 +56,15 @@ const validateReminderValues = (
   let hasErrors
 
   if (!values.name) {
-    errors.name = "Required"
+    errors.name = 'Required'
     hasErrors = true
   }
   if (!parseInt(values.interval, 10)) {
-    errors.interval = "Required"
+    errors.interval = 'Required'
     hasErrors = true
   }
   if (hasErrors) {
-    onUpdate({ name: "", interval: 0 }, false)
+    onUpdate({ name: '', interval: 0 }, false)
   }
   return errors
 }
@@ -73,19 +73,19 @@ const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues,
   return (
     <Formik
       initialValues={{
-        name: initialValues?.name || "",
-        interval: initialValues?.interval || "",
+        name: initialValues?.name || '',
+        interval: initialValues?.interval || '',
       }}
       validate={validateReminderValues(onUpdate)}
-      onSubmit={(values) => {
-        return new Promise((resolve) =>
+      onSubmit={values => {
+        return new Promise(resolve =>
           setTimeout(() => {
-            console.log("submitted", JSON.stringify(values, null, 2))
+            console.log('submitted', JSON.stringify(values, null, 2))
             onUpdate(
               {
                 ...values,
                 interval:
-                  typeof values.interval === "number"
+                  typeof values.interval === 'number'
                     ? values.interval
                     : parseInt(values.interval, 10),
               },
@@ -98,21 +98,21 @@ const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues,
       render={() => (
         <Form>
           <AutoSave debounceMs={200} />
-          <Stack spacing={4} maxW="md" bgColor="lightgray" p={2}>
-            <Field name="name">
+          <Stack spacing={4} maxW='md' bgColor='lightgray' p={2}>
+            <Field name='name'>
               {({ field, form }) => (
                 <FormControl isInvalid={form.errors.name && form.touched.name}>
-                  <FormLabel htmlFor="name">Name</FormLabel>
-                  <Input {...field} id="name" placeholder="name" />
+                  <FormLabel htmlFor='name'>Name</FormLabel>
+                  <Input {...field} id='name' placeholder='name' />
                   <FormErrorMessage>{form.errors.name}</FormErrorMessage>
                 </FormControl>
               )}
             </Field>
-            <Field name="interval">
+            <Field name='interval'>
               {({ field, form }) => (
                 <FormControl isInvalid={form.errors.interval && form.touched.interval}>
-                  <FormLabel htmlFor="interval">Interval</FormLabel>
-                  <Input {...field} id="interval" placeholder="" />
+                  <FormLabel htmlFor='interval'>Interval</FormLabel>
+                  <Input {...field} id='interval' placeholder='' />
                   <FormErrorMessage>{form.errors.interval}</FormErrorMessage>
                 </FormControl>
               )}
@@ -124,27 +124,27 @@ const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues,
   )
 }
 
-type ReminderStatus = "pending" | "overdue"
+type ReminderStatus = 'pending' | 'overdue'
 
 const calcMinutesRemaining = (d1: Date, d2: Date | null) => {
   return d2 === null ? -1 : Math.ceil((d2.getTime() - d1.getTime()) / 60000)
 }
 
 const ActiveReminder: FunctionComponent<{ reminder: Reminder }> = ({ reminder }) => {
-  const [status, setStatus] = useState<ReminderStatus>("pending")
+  const [status, setStatus] = useState<ReminderStatus>('pending')
   const [minRemaining, setMinRemaining] = useState(
     calcMinutesRemaining(new Date(), reminder.nextDue)
   )
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (status === "overdue") {
+      if (status === 'overdue') {
         return
       }
       const newMinRemaining = calcMinutesRemaining(new Date(), reminder.nextDue)
       setMinRemaining(newMinRemaining)
       if (newMinRemaining <= 0) {
-        setStatus("overdue")
+        setStatus('overdue')
       }
     }, 2000)
 
@@ -152,14 +152,14 @@ const ActiveReminder: FunctionComponent<{ reminder: Reminder }> = ({ reminder })
   })
 
   return (
-    <Box spacing={2} bgColor={status === "pending" ? "lightgreen" : "lightpink"}>
+    <Box spacing={2} bgColor={status === 'pending' ? 'lightgreen' : 'lightpink'}>
       <ul>
         <li>Name: {reminder.name}</li>
         <li>Interval: {reminder.interval}</li>
         <li>Completed: {reminder.completed}</li>
         <li>Next Due: {reminder.nextDue?.toISOString()}</li>
         <li>Current time: {new Date().toISOString()}</li>
-        {status === "overdue" ? (
+        {status === 'overdue' ? (
           <li>Overdue</li>
         ) : reminder.interval === minRemaining ? (
           <li>{`${minRemaining}m left`}</li>
@@ -223,16 +223,16 @@ const Home: BlitzPage = () => {
   return (
     <Stack spacing={4}>
       <Box>
-        <Heading size="md">Session</Heading>
+        <Heading size='md'>Session</Heading>
         <ul>
-          <li>Started: {session.started?.toISOString() || "null"}</li>
-          <li>Stopped: {session.stopped?.toISOString() || "null"}</li>
+          <li>Started: {session.started?.toISOString() || 'null'}</li>
+          <li>Stopped: {session.stopped?.toISOString() || 'null'}</li>
         </ul>
       </Box>
       <Box>
         {!isSessionStarted && (
           <>
-            <Heading size="md">Reminder Configs</Heading>
+            <Heading size='md'>Reminder Configs</Heading>
             <Stack spacing={2}>
               {session?.reminders.map((r, i) => (
                 <ReminderConfig
@@ -240,7 +240,7 @@ const Home: BlitzPage = () => {
                   initialValues={{ interval: r.interval, name: r.name }}
                   onUpdate={(newValues, valid) => {
                     if (!valid) {
-                      console.log("not valid :(")
+                      console.log('not valid :(')
                       updateReminderValidityCallback(i, false)
                     } else {
                       updateReminderCallback(newValues, i)
@@ -253,8 +253,8 @@ const Home: BlitzPage = () => {
         )}
         {isSessionStarted && (
           <>
-            <Heading size="md">Reminders</Heading>
-            <Stack spacing={4} maxW="md">
+            <Heading size='md'>Reminders</Heading>
+            <Stack spacing={4} maxW='md'>
               {session?.reminders.map((r, i) => (
                 <ActiveReminder reminder={r} key={i} />
               ))}
@@ -267,7 +267,7 @@ const Home: BlitzPage = () => {
           <Button
             onClick={() => {
               addReminderCallback({
-                name: "New reminder",
+                name: 'New reminder',
                 interval: 30,
                 child: null,
                 todos: [],
@@ -286,7 +286,7 @@ const Home: BlitzPage = () => {
             onClick={() => {
               startSessionCallback()
             }}
-            disabled={session.reminders.length === 0 || reminderValidities.some((v) => !v)}
+            disabled={session.reminders.length === 0 || reminderValidities.some(v => !v)}
           >
             Start
           </Button>
@@ -305,6 +305,6 @@ const Home: BlitzPage = () => {
 }
 
 Home.suppressFirstRenderFlicker = true
-Home.getLayout = (page) => <Layout title="Home">{page}</Layout>
+Home.getLayout = page => <Layout title='Home'>{page}</Layout>
 
 export default Home

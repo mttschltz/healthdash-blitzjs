@@ -6,14 +6,14 @@ import {
   AuthorizationError,
   ErrorFallbackProps,
   useQueryErrorResetBoundary,
-} from "blitz"
-import { ErrorBoundary } from "react-error-boundary"
-import LoginForm from "app/auth/components/LoginForm"
+} from 'blitz'
+import { ErrorBoundary } from 'react-error-boundary'
+import LoginForm from 'app/auth/components/LoginForm'
 
-import { ChakraProvider } from "@chakra-ui/react"
+import { ChakraProvider } from '@chakra-ui/react'
 
 export default function App({ Component, pageProps }: AppProps) {
-  const getLayout = Component.getLayout || ((page) => page)
+  const getLayout = Component.getLayout || (page => page)
   const router = useRouter()
 
   return (
@@ -36,7 +36,7 @@ function RootErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
     return (
       <ErrorComponent
         statusCode={error.statusCode}
-        title="Sorry, you are not authorized to access this"
+        title='Sorry, you are not authorized to access this'
       />
     )
   } else {
