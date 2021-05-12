@@ -8,7 +8,7 @@ import {
   stopSession,
   updateReminderConfig,
 } from "app/models/Session"
-import { FunctionComponent, useCallback, useState } from "react"
+import { FunctionComponent, useCallback, useEffect, useState } from "react"
 import {
   Box,
   Button,
@@ -124,6 +124,53 @@ const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({ initialValues,
   )
 }
 
+type ReminderStatus = "pending" | "overdue"
+
+const calcMinutesRemaining = (d1: Date, d2: Date | null) => {
+  return d2 === null ? -1 : Math.ceil((d2.getTime() - d1.getTime()) / 60000)
+}
+
+const ActiveReminder: FunctionComponent<{ reminder: Reminder }> = ({ reminder }) => {
+  const [status, setStatus] = useState<ReminderStatus>("pending")
+  const [minRemaining, setMinRemaining] = useState(
+    calcMinutesRemaining(new Date(), reminder.nextDue)
+  )
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (status === "overdue") {
+        return
+      }
+      const newMinRemaining = calcMinutesRemaining(new Date(), reminder.nextDue)
+      setMinRemaining(newMinRemaining)
+      if (newMinRemaining <= 0) {
+        setStatus("overdue")
+      }
+    }, 2000)
+
+    return () => clearInterval(interval)
+  })
+
+  return (
+    <Box spacing={2} bgColor={status === "pending" ? "lightgreen" : "lightpink"}>
+      <ul>
+        <li>Name: {reminder.name}</li>
+        <li>Interval: {reminder.interval}</li>
+        <li>Completed: {reminder.completed}</li>
+        <li>Next Due: {reminder.nextDue?.toISOString()}</li>
+        <li>Current time: {new Date().toISOString()}</li>
+        {status === "overdue" ? (
+          <li>Overdue</li>
+        ) : reminder.interval === minRemaining ? (
+          <li>{`${minRemaining}m left`}</li>
+        ) : (
+          <li>{`${minRemaining}/${reminder.interval}m left`}</li>
+        )}
+      </ul>
+    </Box>
+  )
+}
+
 const Home: BlitzPage = () => {
   const [session, setSession] = useState<Session>(() => ({
     reminders: [],
@@ -209,14 +256,7 @@ const Home: BlitzPage = () => {
             <Heading size="md">Reminders</Heading>
             <Stack spacing={4} maxW="md">
               {session?.reminders.map((r, i) => (
-                <Box key={i} spacing={2} bgColor="lightgreen">
-                  <ul>
-                    <li>Name: {r.name}</li>
-                    <li>Interval: {r.interval}</li>
-                    <li>Completed: {r.completed}</li>
-                    <li>Next Due: {r.nextDue?.toISOString()}</li>
-                  </ul>
-                </Box>
+                <ActiveReminder reminder={r} key={i} />
               ))}
             </Stack>
           </>
