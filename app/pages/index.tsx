@@ -2,10 +2,12 @@ import { BlitzPage } from 'blitz'
 import Layout from 'app/core/layouts/Layout'
 import {
   addReminder,
+  completeTodo,
   Reminder,
   Session,
   startSession,
   stopSession,
+  uncompleteTodo,
   updateReminderConfig,
 } from 'app/models/models'
 import { useCallback, useState } from 'react'
@@ -63,6 +65,20 @@ const Home: BlitzPage = () => {
     [session, reminderValidities]
   )
 
+  const completeTodoCallback = useCallback(
+    (tn: string, ri: number) => {
+      setSession(completeTodo(session, ri, tn))
+    },
+    [session]
+  )
+
+  const uncompleteTodoCallback = useCallback(
+    (tn: string, ri: number) => {
+      setSession(uncompleteTodo(session, ri, tn))
+    },
+    [session]
+  )
+
   return (
     <Stack spacing={4}>
       <Box>
@@ -99,7 +115,16 @@ const Home: BlitzPage = () => {
             <Heading size='md'>Reminders</Heading>
             <Stack spacing={4} maxW='md'>
               {session?.reminders.map((r, i) => (
-                <ActiveReminder reminder={r} key={i} />
+                <ActiveReminder
+                  reminder={r}
+                  key={i}
+                  completeTodo={(tn: string) => {
+                    completeTodoCallback(tn, i)
+                  }}
+                  uncompleteTodo={(tn: string) => {
+                    uncompleteTodoCallback(tn, i)
+                  }}
+                />
               ))}
             </Stack>
           </>
@@ -113,7 +138,20 @@ const Home: BlitzPage = () => {
                 name: 'New reminder',
                 interval: 30,
                 child: null,
-                todos: [],
+                todos: [
+                  {
+                    name: 'Look away from screen',
+                    complete: false,
+                  },
+                  {
+                    name: 'Drink water',
+                    complete: false,
+                  },
+                  {
+                    name: 'Desk yoga',
+                    complete: false,
+                  },
+                ],
                 nextDue: null,
                 completed: 0,
               })

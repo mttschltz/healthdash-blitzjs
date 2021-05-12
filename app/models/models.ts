@@ -97,6 +97,51 @@ export const isReminderStartable = (r: Reminder) => {
   )
 }
 
+export const isReminderComplete = (s: Session, ri: number) => {
+  return !s.reminders[ri].todos.some(t => !t.complete)
+}
+
+export const completeTodo = (s: Session, ri: number, tn: string): Session => {
+  const ns = updateTodoComplete(s, ri, tn, true)
+  if (isReminderComplete(ns, ri)) {
+    return {
+      ...s,
+      reminders: [...s.reminders].map((r, i) => {
+        if (ri !== i) {
+          return r
+        }
+        return completeIteration(r)
+      }),
+    }
+  }
+  return ns
+}
+
+export const uncompleteTodo = (s: Session, ri: number, tn: string): Session => {
+  return updateTodoComplete(s, ri, tn, false)
+}
+
+const updateTodoComplete = (s: Session, ri: number, tn: string, complete: boolean): Session => ({
+  ...s,
+  reminders: [...s.reminders].map((r, i) => {
+    if (i !== ri) {
+      return r
+    }
+    return {
+      ...r,
+      todos: r.todos.map((t, j) => {
+        if (t.name !== tn) {
+          return t
+        }
+        return {
+          ...t,
+          complete,
+        }
+      }),
+    }
+  }),
+})
+
 interface Todo {
   name: string
   complete: boolean
