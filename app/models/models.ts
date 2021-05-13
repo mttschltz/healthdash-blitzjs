@@ -26,7 +26,8 @@ export const updateReminderConfig = (
   s: Session,
   i: number,
   name: string,
-  interval: number
+  interval: number,
+  todos: string[]
 ): Session => ({
   ...s,
   reminders: [...s.reminders].map((r, j) => {
@@ -37,6 +38,7 @@ export const updateReminderConfig = (
       ...r,
       name,
       interval,
+      todos: todos.map(t => ({ name: t, complete: false })),
     }
   }),
 })

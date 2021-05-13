@@ -55,8 +55,15 @@ const Home: BlitzPage = () => {
   const updateReminderCallback = useCallback(
     (newValues: ReminderConfigValues, i: number) => {
       const r = session.reminders[i]
-      if (newValues.name !== r.name || newValues.interval !== r.interval) {
-        setSession(updateReminderConfig(session, i, newValues.name, newValues.interval))
+      if (
+        newValues.name !== r.name ||
+        newValues.interval !== r.interval ||
+        newValues.todos.length !== r.todos.length ||
+        newValues.todos.some((t, j) => t !== r.todos[j].name)
+      ) {
+        setSession(
+          updateReminderConfig(session, i, newValues.name, newValues.interval, newValues.todos)
+        )
       }
       const newReminderValidities = [...reminderValidities]
       newReminderValidities[i] = true
@@ -96,7 +103,11 @@ const Home: BlitzPage = () => {
               {session?.reminders.map((r, i) => (
                 <ReminderConfig
                   key={i}
-                  initialValues={{ interval: r.interval, name: r.name }}
+                  initialValues={{
+                    interval: r.interval,
+                    name: r.name,
+                    todos: r.todos?.map(t => t.name),
+                  }}
                   onUpdate={(newValues, valid) => {
                     if (!valid) {
                       console.log('not valid :(')

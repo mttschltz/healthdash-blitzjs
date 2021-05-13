@@ -42,7 +42,7 @@ const validateReminderValues = (
   onUpdate: (values: ReminderConfigValues, valid: Boolean) => void
 ) => (values: ReminderConfigValuesStrings) => {
   const errors: Partial<ReminderConfigValuesStrings> = {}
-  let hasErrors
+  let hasErrors = false
 
   if (!values.name) {
     errors.name = 'Required'
@@ -70,9 +70,9 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
   return (
     <Formik
       initialValues={{
-        name: initialValues?.name || '',
-        interval: initialValues?.interval + '' || '',
-        todos: [],
+        name: initialValues.name || '',
+        interval: initialValues.interval + '' || '',
+        todos: initialValues.todos || [],
       }}
       validate={validateReminderValues(onUpdate)}
       onSubmit={values => {
