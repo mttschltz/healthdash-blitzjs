@@ -16,6 +16,18 @@ import React from 'react'
 import { ReminderConfig, ReminderConfigValues } from 'app/reminder/components/ReminderConfig'
 import { ActiveReminder } from 'app/reminder/components/ActiveReminder'
 
+const haveValuesChanged = (v: ReminderConfigValues, r: Reminder) => {
+  return (
+    v.name !== r.name ||
+    v.interval !== r.interval ||
+    v.todos.length !== r.todos.length ||
+    v.todos.some((t, j) => t !== r.todos[j].name) ||
+    (v.child && !r.child) ||
+    (!v.child && r.child) ||
+    (v.child && r.child && haveValuesChanged(v.child, r.child), r.child)
+  )
+}
+
 const Home: BlitzPage = () => {
   const [session, setSession] = useState<Session>(() => ({
     reminders: [],
@@ -55,14 +67,16 @@ const Home: BlitzPage = () => {
   const updateReminderCallback = useCallback(
     (newValues: ReminderConfigValues, i: number) => {
       const r = session.reminders[i]
-      if (
-        newValues.name !== r.name ||
-        newValues.interval !== r.interval ||
-        newValues.todos.length !== r.todos.length ||
-        newValues.todos.some((t, j) => t !== r.todos[j].name)
-      ) {
+      if (haveValuesChanged(newValues, r)) {
         setSession(
-          updateReminderConfig(session, i, newValues.name, newValues.interval, newValues.todos)
+          updateReminderConfig(
+            session,
+            i,
+            newValues.name,
+            newValues.interval,
+            newValues.todos,
+            newValues.child
+          )
         )
       }
       const newReminderValidities = [...reminderValidities]

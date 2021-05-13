@@ -92,6 +92,16 @@ export const ActiveReminder: FunctionComponent<ActiveReminderProps> = ({
           )
         })}
       </Stack>
+      {reminder.child && (
+        <Stack mt={4}>
+          <ul>
+            <li>Name: {reminder.child.name}</li>
+            <li>Interval: {reminder.child.interval}</li>
+            <li>Completed: {reminder.child.completed}</li>
+            <li>Next Due: {reminder.child.nextDue?.toISOString()}</li>
+          </ul>
+        </Stack>
+      )}
     </Box>
   )
 }

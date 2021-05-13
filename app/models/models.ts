@@ -27,18 +27,47 @@ export const updateReminderConfig = (
   i: number,
   name: string,
   interval: number,
-  todos: string[]
+  todos: string[],
+  child?: {
+    name: string
+    interval: number
+    todos: string[]
+  }
 ): Session => ({
   ...s,
   reminders: [...s.reminders].map((r, j) => {
     if (i !== j) {
       return r
     }
+
+    let c: Reminder | null
+    if (!r.child && child) {
+      // there was no child, now there is
+      c = {
+        ...child,
+        completed: 0,
+        child: null,
+        nextDue: null,
+        todos: child.todos.map(t => ({ name: t, complete: false })),
+      }
+    } else if (r.child && child) {
+      // there was a child, it has been updated
+      c = {
+        ...r.child,
+        ...child,
+        todos: child.todos.map(t => ({ name: t, complete: false })),
+      }
+    } else {
+      // there was a child, now there isn't
+      c = null
+    }
+
     return {
       ...r,
       name,
       interval,
       todos: todos.map(t => ({ name: t, complete: false })),
+      child: c,
     }
   }),
 })

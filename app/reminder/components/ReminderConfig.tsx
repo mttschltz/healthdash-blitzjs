@@ -6,22 +6,30 @@ import {
   FormErrorMessage,
   Heading,
   Box,
+  Button,
 } from '@chakra-ui/react'
 import { Form, Formik, Field, useFormikContext, FieldArray } from 'formik'
 import debounce from 'just-debounce-it'
 import React, { FunctionComponent, useCallback } from 'react'
 
+type RecursivePartial<T> = {
+  [P in keyof T]?: RecursivePartial<T[P]>
+}
 interface ReminderConfigProps {
   initialValues: Partial<ReminderConfigValues>
   onUpdate: (values: ReminderConfigValues, valid: Boolean) => void
 }
+
 export interface ReminderConfigValues {
   name: string
   interval: number
   todos: string[]
+  child?: ReminderConfigValues
 }
 
-type ReminderConfigValuesStrings = Omit<ReminderConfigValues, 'interval'> & { interval: string }
+type ReminderConfigValuesStrings = Omit<ReminderConfigValues, 'interval'> & {
+  interval: string
+}
 
 const AutoSave = ({ debounceMs }) => {
   const formik = useFormikContext()
@@ -41,9 +49,10 @@ const AutoSave = ({ debounceMs }) => {
 const validateReminderValues = (
   onUpdate: (values: ReminderConfigValues, valid: Boolean) => void
 ) => (values: ReminderConfigValuesStrings) => {
-  const errors: Partial<ReminderConfigValuesStrings> = {}
+  const errors: RecursivePartial<ReminderConfigValuesStrings> = {}
   let hasErrors = false
 
+  // Parent
   if (!values.name) {
     errors.name = 'Required'
     hasErrors = true
@@ -57,6 +66,16 @@ const validateReminderValues = (
     errors.todos[values.todos.length] = 'At least 1 Todo is required'
     hasErrors = true
   }
+
+  // Child
+  if (values.child) {
+    if (!values.child.name) {
+      errors.child = errors.child || {}
+      errors.child.name = 'Required'
+      hasErrors = true
+    }
+  }
+
   if (hasErrors) {
     onUpdate({ name: '', interval: 0, todos: [] }, false)
   }
@@ -85,6 +104,9 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
                   typeof values.interval === 'number'
                     ? values.interval
                     : parseInt(values.interval, 10),
+                child: !values.child
+                  ? undefined
+                  : { ...values.child, interval: values.child.interval },
               },
               true
             )
@@ -92,7 +114,7 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
           }, 500)
         )
       }}
-      render={({ values, errors }) => (
+      render={({ values, errors, setFieldValue }) => (
         <Form>
           <AutoSave debounceMs={200} />
           <Stack spacing={4} maxW='md' bgColor='lightgray' p={2}>
@@ -149,6 +171,41 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
                 </div>
               )}
             />
+            {/* Child */}
+            {!values.child ? (
+              <Button
+                onClick={() =>
+                  setFieldValue('child', { interval: 5, name: 'Micro break', todos: ['Stretch'] })
+                }
+              >
+                Add Intermediate Reminder
+              </Button>
+            ) : (
+              <>
+                <Heading size='sm'>Intermediate Reminder</Heading>
+                <Field name='child.name'>
+                  {({ field, form }) => (
+                    <FormControl isInvalid={form.errors.child?.name && form.touched.child.name}>
+                      <FormLabel htmlFor='child-name'>Name</FormLabel>
+                      <Input {...field} id='child-name' placeholder='child-name' />
+                      <FormErrorMessage>{form.errors.child?.name}</FormErrorMessage>
+                    </FormControl>
+                  )}
+                </Field>
+                {/* <Field name='interval'>
+              {({ field, form }) => (
+                <FormControl isInvalid={form.errors.interval && form.touched.interval}>
+                  <FormLabel htmlFor='interval'>Interval</FormLabel>
+                  <Input {...field} id='interval' placeholder='' />
+                  <FormErrorMessage>{form.errors.child.interval}</FormErrorMessage>
+                </FormControl>
+              )}
+            </Field> */}
+                <Button onClick={() => setFieldValue('child', undefined)}>
+                  remove Intermediate Reminder
+                </Button>
+              </>
+            )}
           </Stack>
         </Form>
       )}
