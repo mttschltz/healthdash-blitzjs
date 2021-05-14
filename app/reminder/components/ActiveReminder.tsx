@@ -1,5 +1,5 @@
 import { Box, Checkbox, Heading, Stack, Text } from '@chakra-ui/react'
-import { Reminder } from 'app/models/models'
+import { Reminder, Todo } from 'app/models/models'
 import React, { FunctionComponent, useState, useEffect, useCallback } from 'react'
 
 type ReminderStatus = 'pending' | 'overdue'
@@ -8,74 +8,56 @@ const calcMinutesRemaining = (d1: Date, d2: Date | null) => {
   return d2 === null ? -1 : Math.ceil((d2.getTime() - d1.getTime()) / 60000)
 }
 
-export interface ActiveReminderProps {
+export interface ActiveReminderManagerProps {
   reminder: Reminder
-  completeTodo: (n: string) => void
-  uncompleteTodo: (n: string) => void
+  completeTodo: (tn: string) => void
+  uncompleteTodo: (tn: string) => void
+  completeChildTodo: (ctn: string) => void
+  uncompleteChildTodo: (ctn: string) => void
 }
 
-export const ActiveReminder: FunctionComponent<ActiveReminderProps> = ({
-  completeTodo,
-  uncompleteTodo,
-  reminder,
+interface ActiveReminderProps {
+  name: string
+  interval: number
+  todos: Todo[]
+
+  completed: number
+  nextDue: Date | null
+
+  minRemaining: number | null
+  status: ReminderStatus
+  updateTodoCallback: (tn: string, checked: boolean) => void
+}
+
+const ActiveReminder: FunctionComponent<ActiveReminderProps> = ({
+  completed,
+  interval,
+  name,
+  nextDue,
+  todos,
+  status,
+  minRemaining,
+  updateTodoCallback,
 }) => {
-  const [status, setStatus] = useState<ReminderStatus>('pending')
-  const [minRemaining, setMinRemaining] = useState(
-    calcMinutesRemaining(new Date(), reminder.nextDue)
-  )
-
-  const updateTodoCallback = useCallback(
-    (tn: string, checked: boolean) => {
-      if (checked) {
-        completeTodo(tn)
-      } else {
-        uncompleteTodo(tn)
-      }
-    },
-    [completeTodo, uncompleteTodo]
-  )
-
-  useEffect(() => {
-    const newMinRemaining = calcMinutesRemaining(new Date(), reminder.nextDue)
-    setMinRemaining(newMinRemaining)
-    if (newMinRemaining <= 0) {
-      setStatus('overdue')
-    } else {
-      setStatus('pending')
-    }
-
-    const interval = setInterval(() => {
-      const newMinRemaining = calcMinutesRemaining(new Date(), reminder.nextDue)
-      setMinRemaining(newMinRemaining)
-      if (newMinRemaining <= 0) {
-        setStatus('overdue')
-      } else {
-        setStatus('pending')
-      }
-    }, 2000)
-
-    return () => clearInterval(interval)
-  }, [reminder.nextDue])
-
   return (
     <Box spacing={2} bgColor={status === 'pending' ? 'lightgreen' : 'lightpink'}>
       <ul>
-        <li>Name: {reminder.name}</li>
-        <li>Interval: {reminder.interval}</li>
-        <li>Completed: {reminder.completed}</li>
-        <li>Next Due: {reminder.nextDue?.toISOString()}</li>
+        <li>Name: {name}</li>
+        <li>Interval: {interval}</li>
+        <li>Completed: {completed}</li>
+        <li>Next Due: {nextDue?.toISOString()}</li>
         <li>Current time: {new Date().toISOString()}</li>
         {status === 'overdue' ? (
           <li>Overdue</li>
-        ) : reminder.interval === minRemaining ? (
+        ) : interval === minRemaining ? (
           <li>{`${minRemaining}m left`}</li>
         ) : (
-          <li>{`${minRemaining}/${reminder.interval}m left`}</li>
+          <li>{`${minRemaining}/${interval}m left`}</li>
         )}
       </ul>
       <Stack>
         <Heading size='sm'>Todos</Heading>
-        {reminder.todos.map((t, i) => {
+        {todos.map((t, i) => {
           return status === 'overdue' ? (
             <Checkbox
               key={i}
@@ -92,16 +74,108 @@ export const ActiveReminder: FunctionComponent<ActiveReminderProps> = ({
           )
         })}
       </Stack>
-      {reminder.child && (
-        <Stack mt={4}>
-          <ul>
-            <li>Name: {reminder.child.name}</li>
-            <li>Interval: {reminder.child.interval}</li>
-            <li>Completed: {reminder.child.completed}</li>
-            <li>Next Due: {reminder.child.nextDue?.toISOString()}</li>
-          </ul>
-        </Stack>
-      )}
     </Box>
+  )
+}
+
+const shouldParentOverrideChild = (parentReminder: Reminder, childReminder: Reminder | null) => {
+  return (
+    childReminder === null || // no child
+    // parent has less remaining, with 1 min buffer
+    // use times not minRemaining as rounding causes problems
+    (parentReminder.nextDue !== null &&
+      childReminder.nextDue !== null &&
+      parentReminder.nextDue <= new Date(childReminder.nextDue.getTime() + 60000))
+  )
+}
+
+export const ActiveReminderManager: FunctionComponent<ActiveReminderManagerProps> = ({
+  completeTodo,
+  uncompleteTodo,
+  completeChildTodo,
+  uncompleteChildTodo,
+  reminder: parentReminder,
+}) => {
+  const childReminder = parentReminder.child
+  const [minRemainingActive, setMinRemainingActive] = useState<number | null>(null)
+  const [childIsActive, setChildIsActive] = useState(false)
+  const [status, setStatus] = useState<ReminderStatus>('pending')
+
+  const updateTodoCallback = useCallback(
+    (tn: string, checked: boolean) => {
+      if (checked) {
+        completeTodo(tn)
+      } else {
+        uncompleteTodo(tn)
+      }
+    },
+    [completeTodo, uncompleteTodo]
+  )
+
+  const updateChildTodoCallback = useCallback(
+    (tn: string, checked: boolean) => {
+      if (checked) {
+        completeChildTodo(tn)
+      } else {
+        uncompleteChildTodo(tn)
+      }
+    },
+    [completeChildTodo, uncompleteChildTodo]
+  )
+
+  useEffect(() => {
+    // This block is repeated below
+    if (shouldParentOverrideChild(parentReminder, childReminder) || childReminder === null) {
+      const newMinRemainingParent = calcMinutesRemaining(new Date(), parentReminder.nextDue)
+      setChildIsActive(false)
+      setStatus(newMinRemainingParent <= 0 ? 'overdue' : 'pending')
+      setMinRemainingActive(newMinRemainingParent)
+    } else {
+      const newMinRemainingChild = calcMinutesRemaining(new Date(), childReminder.nextDue)
+      setChildIsActive(true)
+      setStatus(newMinRemainingChild <= 0 ? 'overdue' : 'pending')
+      setMinRemainingActive(newMinRemainingChild)
+    }
+
+    const interval = setInterval(() => {
+      // This block is repeated above
+      if (shouldParentOverrideChild(parentReminder, childReminder) || childReminder === null) {
+        const newMinRemainingParent = calcMinutesRemaining(new Date(), parentReminder.nextDue)
+        setChildIsActive(false)
+        setStatus(newMinRemainingParent <= 0 ? 'overdue' : 'pending')
+        setMinRemainingActive(newMinRemainingParent)
+      } else {
+        const newMinRemainingChild = calcMinutesRemaining(new Date(), childReminder.nextDue)
+        setChildIsActive(true)
+        setStatus(newMinRemainingChild <= 0 ? 'overdue' : 'pending')
+        setMinRemainingActive(newMinRemainingChild)
+      }
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [childReminder, parentReminder, parentReminder.nextDue])
+
+  return childIsActive && childReminder ? (
+    <ActiveReminder
+      completed={childReminder.completed}
+      interval={childReminder.interval}
+      minRemaining={minRemainingActive}
+      name={childReminder.name}
+      nextDue={childReminder.nextDue}
+      status={status}
+      todos={childReminder.todos}
+      updateTodoCallback={updateChildTodoCallback}
+    />
+  ) : (
+    <ActiveReminder
+      completed={parentReminder.completed}
+      interval={parentReminder.interval}
+      minRemaining={minRemainingActive}
+      name={parentReminder.name}
+      nextDue={parentReminder.nextDue}
+      status={status}
+      todos={parentReminder.todos}
+      updateTodoCallback={updateTodoCallback}
+    />
   )
 }

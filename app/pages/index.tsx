@@ -2,11 +2,13 @@ import { BlitzPage } from 'blitz'
 import Layout from 'app/core/layouts/Layout'
 import {
   addReminder,
+  completeChildTodo,
   completeTodo,
   Reminder,
   Session,
   startSession,
   stopSession,
+  uncompleteChildTodo,
   uncompleteTodo,
   updateReminderConfig,
 } from 'app/models/models'
@@ -14,7 +16,7 @@ import { useCallback, useState } from 'react'
 import { Box, Button, Heading, Stack } from '@chakra-ui/react'
 import React from 'react'
 import { ReminderConfig, ReminderConfigValues } from 'app/reminder/components/ReminderConfig'
-import { ActiveReminder } from 'app/reminder/components/ActiveReminder'
+import { ActiveReminderManager } from 'app/reminder/components/ActiveReminder'
 
 const haveValuesChanged = (v: ReminderConfigValues, r: Reminder) => {
   return (
@@ -100,6 +102,20 @@ const Home: BlitzPage = () => {
     [session]
   )
 
+  const completeChildTodoCallback = useCallback(
+    (ctn: string, ri: number) => {
+      setSession(completeChildTodo(session, ri, ctn))
+    },
+    [session]
+  )
+
+  const uncompleteChildTodoCallback = useCallback(
+    (ctn: string, ri: number) => {
+      setSession(uncompleteChildTodo(session, ri, ctn))
+    },
+    [session]
+  )
+
   return (
     <Stack spacing={4}>
       <Box>
@@ -140,7 +156,7 @@ const Home: BlitzPage = () => {
             <Heading size='md'>Reminders</Heading>
             <Stack spacing={4} maxW='md'>
               {session?.reminders.map((r, i) => (
-                <ActiveReminder
+                <ActiveReminderManager
                   reminder={r}
                   key={i}
                   completeTodo={(tn: string) => {
@@ -148,6 +164,12 @@ const Home: BlitzPage = () => {
                   }}
                   uncompleteTodo={(tn: string) => {
                     uncompleteTodoCallback(tn, i)
+                  }}
+                  completeChildTodo={(ctn: string) => {
+                    completeChildTodoCallback(ctn, i)
+                  }}
+                  uncompleteChildTodo={(ctn: string) => {
+                    uncompleteChildTodoCallback(ctn, i)
                   }}
                 />
               ))}

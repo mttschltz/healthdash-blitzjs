@@ -132,6 +132,10 @@ export const isReminderComplete = (s: Session, ri: number) => {
   return !s.reminders[ri].todos.some(t => !t.complete)
 }
 
+export const isChildReminderComplete = (s: Session, ri: number) => {
+  return !s.reminders[ri].child?.todos.some(t => !t.complete)
+}
+
 export const completeTodo = (s: Session, ri: number, tn: string): Session => {
   const ns = updateTodoComplete(s, ri, tn, true)
   if (isReminderComplete(ns, ri)) {
@@ -173,7 +177,61 @@ const updateTodoComplete = (s: Session, ri: number, tn: string, complete: boolea
   }),
 })
 
-interface Todo {
+export const completeChildTodo = (s: Session, ri: number, ctn: string): Session => {
+  const ns = updateChildTodoComplete(s, ri, ctn, true)
+  if (isChildReminderComplete(ns, ri)) {
+    return {
+      ...s,
+      reminders: [...s.reminders].map((r, i) => {
+        if (ri !== i) {
+          return r
+        }
+        return {
+          ...r,
+          child: !r.child ? null : completeIteration(r.child),
+        }
+      }),
+    }
+  }
+  return ns
+}
+
+export const uncompleteChildTodo = (s: Session, ri: number, ctn: string): Session => {
+  return updateChildTodoComplete(s, ri, ctn, false)
+}
+
+const updateChildTodoComplete = (
+  s: Session,
+  ri: number,
+  ctn: string,
+  complete: boolean
+): Session => ({
+  ...s,
+  reminders: [...s.reminders].map((r, i) => {
+    if (i !== ri) {
+      return r
+    }
+    return {
+      ...r,
+      child: !r.child
+        ? null
+        : {
+            ...r.child,
+            todos: r.child.todos.map(t => {
+              if (t.name !== ctn) {
+                return t
+              }
+              return {
+                ...t,
+                complete,
+              }
+            }),
+          },
+    }
+  }),
+})
+
+export interface Todo {
   name: string
   complete: boolean
 }

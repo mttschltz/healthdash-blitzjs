@@ -175,7 +175,11 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
             {!values.child ? (
               <Button
                 onClick={() =>
-                  setFieldValue('child', { interval: 5, name: 'Micro break', todos: ['Stretch'] })
+                  setFieldValue('child', {
+                    interval: 2,
+                    name: 'Micro break',
+                    todos: ['Stretch', 'Drink water'],
+                  })
                 }
               >
                 Add Intermediate Reminder
