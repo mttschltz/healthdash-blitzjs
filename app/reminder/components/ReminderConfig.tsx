@@ -8,13 +8,10 @@ import {
   Box,
   Button,
 } from '@chakra-ui/react'
-import { Form, Formik, Field, useFormikContext, FieldArray } from 'formik'
+import { Form, Formik, Field, useFormikContext, FieldArray, FormikErrors, getIn } from 'formik'
 import debounce from 'just-debounce-it'
 import React, { FunctionComponent, useCallback } from 'react'
 
-type RecursivePartial<T> = {
-  [P in keyof T]?: RecursivePartial<T[P]>
-}
 interface ReminderConfigProps {
   initialValues: Partial<ReminderConfigValues>
   onUpdate: (values: ReminderConfigValues, valid: Boolean) => void
@@ -27,8 +24,11 @@ export interface ReminderConfigValues {
   child?: ReminderConfigValues
 }
 
-type ReminderConfigValuesStrings = Omit<ReminderConfigValues, 'interval'> & {
-  interval: string
+export interface ReminderConfigErrors {
+  name?: string
+  interval?: string
+  todos?: string
+  child?: ReminderConfigErrors
 }
 
 const AutoSave = ({ debounceMs }) => {
@@ -48,8 +48,8 @@ const AutoSave = ({ debounceMs }) => {
 
 const validateReminderValues = (
   onUpdate: (values: ReminderConfigValues, valid: Boolean) => void
-) => (values: ReminderConfigValuesStrings) => {
-  const errors: RecursivePartial<ReminderConfigValuesStrings> = {}
+) => (values: ReminderConfigValues) => {
+  const errors: ReminderConfigErrors = {}
   let hasErrors = false
 
   // Parent
@@ -57,13 +57,12 @@ const validateReminderValues = (
     errors.name = 'Required'
     hasErrors = true
   }
-  if (!parseInt(values.interval, 10)) {
+  if (!values.interval) {
     errors.interval = 'Required'
     hasErrors = true
   }
   if (values.todos.length === 0 || !values.todos?.some(t => t !== '')) {
-    errors.todos = []
-    errors.todos[values.todos.length] = 'At least 1 Todo is required'
+    errors.todos = 'At least 1 Todo is required'
     hasErrors = true
   }
 
@@ -72,6 +71,17 @@ const validateReminderValues = (
     if (!values.child.name) {
       errors.child = errors.child || {}
       errors.child.name = 'Required'
+      hasErrors = true
+    }
+
+    if (!values.child.interval) {
+      errors.child = errors.child || {}
+      errors.child.interval = 'Required'
+      hasErrors = true
+    }
+    if (values.child.todos.length === 0 || !values.child.todos?.some(t => t !== '')) {
+      errors.child = errors.child || {}
+      errors.child.todos = 'At least 1 Todo is required'
       hasErrors = true
     }
   }
@@ -90,8 +100,9 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
     <Formik
       initialValues={{
         name: initialValues.name || '',
-        interval: initialValues.interval + '' || '',
+        interval: initialValues.interval || -1,
         todos: initialValues.todos || [],
+        child: initialValues.child,
       }}
       validate={validateReminderValues(onUpdate)}
       onSubmit={values => {
@@ -137,40 +148,7 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
               )}
             </Field>
             <Heading size='sm'>Todos</Heading>
-            <FieldArray
-              name='todos'
-              render={arrayHelpers => (
-                <div>
-                  {values.todos && values.todos.length > 0 ? (
-                    values.todos.map((todo, index) => (
-                      <div key={index}>
-                        <Field name={`todos.${index}`} />
-                        <button
-                          type='button'
-                          onClick={() => arrayHelpers.remove(index)} // remove a todo from the list
-                        >
-                          [ - ]
-                        </button>
-                        &nbsp;&nbsp;
-                        <button
-                          type='button'
-                          onClick={() => arrayHelpers.insert(index, '')} // insert an empty string at a position
-                        >
-                          [ + ]
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <button type='button' onClick={() => arrayHelpers.push('')}>
-                      {/* show this when user has removed all todos from the list */}
-                      Add
-                    </button>
-                  )}
-                  {/* TODO: Update this and above to use chakra forms */}
-                  <Box>{errors.todos && errors.todos}</Box>
-                </div>
-              )}
-            />
+            <Todos fieldName='todos' todos={values.todos} todoErrors={errors.todos} />
             {/* Child */}
             {!values.child ? (
               <Button
@@ -196,15 +174,22 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
                     </FormControl>
                   )}
                 </Field>
-                {/* <Field name='interval'>
-              {({ field, form }) => (
-                <FormControl isInvalid={form.errors.interval && form.touched.interval}>
-                  <FormLabel htmlFor='interval'>Interval</FormLabel>
-                  <Input {...field} id='interval' placeholder='' />
-                  <FormErrorMessage>{form.errors.child.interval}</FormErrorMessage>
-                </FormControl>
-              )}
-            </Field> */}
+                <Field name='child.interval'>
+                  {({ field, form }) => (
+                    <FormControl
+                      isInvalid={form.errors.child?.interval && form.touched.child.interval}
+                    >
+                      <FormLabel htmlFor='child-interval'>Interval</FormLabel>
+                      <Input {...field} id='child-interval' placeholder='' />
+                      <FormErrorMessage>{form.errors.child?.interval}</FormErrorMessage>
+                    </FormControl>
+                  )}
+                </Field>
+                <Todos
+                  fieldName={'child.todos'}
+                  todos={values.child.todos}
+                  todoErrors={getIn(errors.child, 'todos')}
+                />
                 <Button onClick={() => setFieldValue('child', undefined)}>
                   remove Intermediate Reminder
                 </Button>
@@ -212,6 +197,49 @@ export const ReminderConfig: FunctionComponent<ReminderConfigProps> = ({
             )}
           </Stack>
         </Form>
+      )}
+    />
+  )
+}
+interface TodosProps {
+  fieldName: string
+  todos: string[]
+  todoErrors: string | string[] | undefined
+}
+const Todos: FunctionComponent<TodosProps> = ({ fieldName, todos, todoErrors }) => {
+  return (
+    <FieldArray
+      name={fieldName}
+      render={arrayHelpers => (
+        <div>
+          {todos && todos.length > 0 ? (
+            todos.map((todo, index) => (
+              <div key={index}>
+                <Field name={`${fieldName}.${index}`} />
+                <button
+                  type='button'
+                  onClick={() => arrayHelpers.remove(index)} // remove a todo from the list
+                >
+                  [ - ]
+                </button>
+                &nbsp;&nbsp;
+                <button
+                  type='button'
+                  onClick={() => arrayHelpers.insert(index, '')} // insert an empty string at a position
+                >
+                  [ + ]
+                </button>
+              </div>
+            ))
+          ) : (
+            <button type='button' onClick={() => arrayHelpers.push('')}>
+              {/* show this when user has removed all todos from the list */}
+              Add
+            </button>
+          )}
+          {/* TODO: Update this and above to use chakra forms */}
+          <Box>{todoErrors}</Box>
+        </div>
       )}
     />
   )

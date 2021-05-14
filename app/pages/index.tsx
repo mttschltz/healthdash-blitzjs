@@ -137,6 +137,13 @@ const Home: BlitzPage = () => {
                     interval: r.interval,
                     name: r.name,
                     todos: r.todos?.map(t => t.name),
+                    child: !r.child
+                      ? undefined
+                      : {
+                          interval: r.child.interval,
+                          name: r.child.name,
+                          todos: r.child.todos?.map(t => t.name),
+                        },
                   }}
                   onUpdate={(newValues, valid) => {
                     if (!valid) {

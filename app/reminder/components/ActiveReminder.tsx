@@ -161,7 +161,7 @@ export const ActiveReminderManager: FunctionComponent<ActiveReminderManagerProps
     const interval = setInterval(update, 2000)
 
     return () => clearInterval(interval)
-  }, [childReminder, parentReminder, parentReminder.nextDue])
+  }, [childReminder, parentReminder])
 
   return childIsActive && childReminder ? (
     <ActiveReminder
@@ -180,7 +180,7 @@ export const ActiveReminderManager: FunctionComponent<ActiveReminderManagerProps
     <ActiveReminder
       completed={parentReminder.completed}
       interval={parentReminder.interval}
-      minRemaining={minRemainingChild}
+      minRemaining={minRemainingParent}
       name={parentReminder.name}
       nextDue={parentReminder.nextDue}
       status={status}
