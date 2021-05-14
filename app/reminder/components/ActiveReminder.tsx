@@ -26,6 +26,8 @@ interface ActiveReminderProps {
 
   minRemaining: number | null
   status: ReminderStatus
+  parentMinRemaining?: number | null
+  parentName?: string
   updateTodoCallback: (tn: string, checked: boolean) => void
 }
 
@@ -37,11 +39,18 @@ const ActiveReminder: FunctionComponent<ActiveReminderProps> = ({
   todos,
   status,
   minRemaining,
+  parentName,
+  parentMinRemaining,
   updateTodoCallback,
 }) => {
   return (
     <Box spacing={2} bgColor={status === 'pending' ? 'lightgreen' : 'lightpink'}>
       <ul>
+        {parentName && (
+          <li>
+            {parentMinRemaining}m left until {parentName}
+          </li>
+        )}
         <li>Name: {name}</li>
         <li>Interval: {interval}</li>
         <li>Completed: {completed}</li>
@@ -85,7 +94,9 @@ const shouldParentOverrideChild = (parentReminder: Reminder, childReminder: Remi
     // use times not minRemaining as rounding causes problems
     (parentReminder.nextDue !== null &&
       childReminder.nextDue !== null &&
-      parentReminder.nextDue <= new Date(childReminder.nextDue.getTime() + 60000))
+      parentReminder.nextDue <= new Date(childReminder.nextDue.getTime() + 60000)) ||
+    // parent is overdue
+    (parentReminder.nextDue !== null && parentReminder.nextDue <= new Date())
   )
 }
 
@@ -97,7 +108,8 @@ export const ActiveReminderManager: FunctionComponent<ActiveReminderManagerProps
   reminder: parentReminder,
 }) => {
   const childReminder = parentReminder.child
-  const [minRemainingActive, setMinRemainingActive] = useState<number | null>(null)
+  const [minRemainingChild, setMinRemainingChild] = useState<number | null>(null)
+  const [minRemainingParent, setMinRemainingParent] = useState<number | null>(null)
   const [childIsActive, setChildIsActive] = useState(false)
   const [status, setStatus] = useState<ReminderStatus>('pending')
 
@@ -124,33 +136,29 @@ export const ActiveReminderManager: FunctionComponent<ActiveReminderManagerProps
   )
 
   useEffect(() => {
-    // This block is repeated below
-    if (shouldParentOverrideChild(parentReminder, childReminder) || childReminder === null) {
-      const newMinRemainingParent = calcMinutesRemaining(new Date(), parentReminder.nextDue)
-      setChildIsActive(false)
-      setStatus(newMinRemainingParent <= 0 ? 'overdue' : 'pending')
-      setMinRemainingActive(newMinRemainingParent)
-    } else {
-      const newMinRemainingChild = calcMinutesRemaining(new Date(), childReminder.nextDue)
-      setChildIsActive(true)
-      setStatus(newMinRemainingChild <= 0 ? 'overdue' : 'pending')
-      setMinRemainingActive(newMinRemainingChild)
-    }
-
-    const interval = setInterval(() => {
-      // This block is repeated above
+    const update = () => {
       if (shouldParentOverrideChild(parentReminder, childReminder) || childReminder === null) {
         const newMinRemainingParent = calcMinutesRemaining(new Date(), parentReminder.nextDue)
         setChildIsActive(false)
         setStatus(newMinRemainingParent <= 0 ? 'overdue' : 'pending')
-        setMinRemainingActive(newMinRemainingParent)
+        setMinRemainingParent(newMinRemainingParent)
+        const newMinRemainingChild = calcMinutesRemaining(
+          new Date(),
+          childReminder?.nextDue || null
+        )
+        setMinRemainingChild(newMinRemainingChild)
       } else {
         const newMinRemainingChild = calcMinutesRemaining(new Date(), childReminder.nextDue)
         setChildIsActive(true)
         setStatus(newMinRemainingChild <= 0 ? 'overdue' : 'pending')
-        setMinRemainingActive(newMinRemainingChild)
+        setMinRemainingChild(newMinRemainingChild)
+        const newMinRemainingParent = calcMinutesRemaining(new Date(), parentReminder.nextDue)
+        setMinRemainingParent(newMinRemainingParent)
       }
-    }, 2000)
+    }
+    update()
+
+    const interval = setInterval(update, 2000)
 
     return () => clearInterval(interval)
   }, [childReminder, parentReminder, parentReminder.nextDue])
@@ -159,18 +167,20 @@ export const ActiveReminderManager: FunctionComponent<ActiveReminderManagerProps
     <ActiveReminder
       completed={childReminder.completed}
       interval={childReminder.interval}
-      minRemaining={minRemainingActive}
+      minRemaining={minRemainingChild}
       name={childReminder.name}
       nextDue={childReminder.nextDue}
       status={status}
       todos={childReminder.todos}
       updateTodoCallback={updateChildTodoCallback}
+      parentMinRemaining={minRemainingParent}
+      parentName={parentReminder.name}
     />
   ) : (
     <ActiveReminder
       completed={parentReminder.completed}
       interval={parentReminder.interval}
-      minRemaining={minRemainingActive}
+      minRemaining={minRemainingChild}
       name={parentReminder.name}
       nextDue={parentReminder.nextDue}
       status={status}
