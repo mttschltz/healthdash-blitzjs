@@ -1,5 +1,6 @@
 import { BlitzPage } from 'blitz'
 import Layout from 'app/core/layouts/Layout'
+import NoSleep from 'nosleep.js'
 import {
   addReminder,
   completeChildTodo,
@@ -12,7 +13,7 @@ import {
   uncompleteTodo,
   updateReminderConfig,
 } from 'app/models/models'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Box, Button, Center, Flex, Heading, Stack } from '@chakra-ui/react'
 import React from 'react'
 import { ReminderConfig, ReminderConfigValues } from 'app/reminder/components/ReminderConfig'
@@ -38,11 +39,22 @@ const Home: BlitzPage = () => {
   }))
   const [isSessionStarted, setIsSessionStarted] = useState(false)
   const [reminderValidities, setReminderValidities] = useState<boolean[]>([])
+  const [noSleep, setNoSleep] = useState<NoSleep>()
+
+  useEffect(() => {
+    setNoSleep(new NoSleep())
+  }, [])
 
   const startSessionCallback = useCallback(() => {
     setSession(startSession(session))
     setIsSessionStarted(true)
-  }, [session])
+    // Enable wake lock.
+    // (must be wrapped in a user input event handler e.g. a mouse or touch handler)
+    if (noSleep && !noSleep.isEnabled) {
+      noSleep?.enable()
+      console.log('Enabled')
+    }
+  }, [noSleep, session])
 
   const stopSessionCallback = useCallback(() => {
     setSession(stopSession(session))

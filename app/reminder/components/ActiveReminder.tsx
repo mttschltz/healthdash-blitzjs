@@ -32,10 +32,7 @@ interface ActiveReminderProps {
 }
 
 const ActiveReminder: FunctionComponent<ActiveReminderProps> = ({
-  completed,
-  interval,
   name,
-  nextDue,
   todos,
   status,
   minRemaining,
@@ -74,7 +71,9 @@ const ActiveReminder: FunctionComponent<ActiveReminderProps> = ({
               {t.name}
             </Checkbox>
           ) : (
-            <Text fontSize='lg'>{t.name}</Text>
+            <Text fontSize='lg' key={i}>
+              {t.name}
+            </Text>
           )
         })}
       </Stack>
