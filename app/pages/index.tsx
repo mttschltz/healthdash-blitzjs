@@ -52,14 +52,16 @@ const Home: BlitzPage = () => {
     // (must be wrapped in a user input event handler e.g. a mouse or touch handler)
     if (noSleep && !noSleep.isEnabled) {
       noSleep?.enable()
-      console.log('Enabled')
     }
   }, [noSleep, session])
 
   const stopSessionCallback = useCallback(() => {
     setSession(stopSession(session))
     setIsSessionStarted(false)
-  }, [session])
+    if (noSleep?.isEnabled) {
+      noSleep.disable()
+    }
+  }, [noSleep, session])
 
   const addReminderCallback = useCallback(
     (r: Reminder) => {
