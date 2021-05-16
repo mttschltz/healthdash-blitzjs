@@ -1,4 +1,4 @@
-import { Box, Checkbox, Heading, Stack, Text } from '@chakra-ui/react'
+import { Box, Checkbox, Flex, Heading, Spacer, Stack, Text } from '@chakra-ui/react'
 import { Reminder, Todo } from 'app/models/models'
 import React, { FunctionComponent, useState, useEffect, useCallback } from 'react'
 
@@ -44,28 +44,23 @@ const ActiveReminder: FunctionComponent<ActiveReminderProps> = ({
   updateTodoCallback,
 }) => {
   return (
-    <Box spacing={2} bgColor={status === 'pending' ? 'lightgreen' : 'lightpink'}>
-      <ul>
-        {parentName && (
-          <li>
-            {parentMinRemaining}m left until {parentName}
-          </li>
-        )}
-        <li>Name: {name}</li>
-        <li>Interval: {interval}</li>
-        <li>Completed: {completed}</li>
-        <li>Next Due: {nextDue?.toISOString()}</li>
-        <li>Current time: {new Date().toISOString()}</li>
-        {status === 'overdue' ? (
-          <li>Overdue</li>
-        ) : interval === minRemaining ? (
-          <li>{`${minRemaining}m left`}</li>
-        ) : (
-          <li>{`${minRemaining}/${interval}m left`}</li>
-        )}
-      </ul>
+    <Box spacing={2} p={4} bgColor={status === 'pending' ? 'lightgreen' : 'lightpink'}>
       <Stack>
-        <Heading size='sm'>Todos</Heading>
+        {parentName && (
+          <Flex>
+            <Heading size='sm'>{parentName}</Heading>
+            <Spacer />
+            <Heading size='sm'>{parentMinRemaining}m left</Heading>
+          </Flex>
+        )}
+        <Flex>
+          <Heading size='lg'>{name}</Heading>
+          <Spacer />
+          {minRemaining && (
+            <Heading size='lg'>{status === 'overdue' ? 'Due' : `${minRemaining}m left`}</Heading>
+          )}
+        </Flex>
+        <Spacer />
         {todos.map((t, i) => {
           return status === 'overdue' ? (
             <Checkbox

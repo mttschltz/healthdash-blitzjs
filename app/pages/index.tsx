@@ -13,7 +13,7 @@ import {
   updateReminderConfig,
 } from 'app/models/models'
 import { useCallback, useState } from 'react'
-import { Box, Button, Heading, Stack } from '@chakra-ui/react'
+import { Box, Button, Center, Flex, Heading, Stack } from '@chakra-ui/react'
 import React from 'react'
 import { ReminderConfig, ReminderConfigValues } from 'app/reminder/components/ReminderConfig'
 import { ActiveReminderManager } from 'app/reminder/components/ActiveReminder'
@@ -117,107 +117,110 @@ const Home: BlitzPage = () => {
   )
 
   return (
-    <Stack spacing={4}>
-      <Box>
-        <Heading size='md'>Session</Heading>
-        <ul>
-          <li>Started: {session.started?.toISOString() || 'null'}</li>
-          <li>Stopped: {session.stopped?.toISOString() || 'null'}</li>
-        </ul>
-      </Box>
-      <Box>
-        {!isSessionStarted && (
-          <>
-            <Heading size='md'>Reminder Configs</Heading>
-            <Stack spacing={2}>
-              {session?.reminders.map((r, i) => (
-                <ReminderConfig
-                  key={i}
-                  initialValues={{
-                    interval: r.interval,
-                    name: r.name,
-                    todos: r.todos?.map(t => t.name),
-                    child: !r.child
-                      ? undefined
-                      : {
-                          interval: r.child.interval,
-                          name: r.child.name,
-                          todos: r.child.todos?.map(t => t.name),
-                        },
-                  }}
-                  onUpdate={(newValues, valid) => {
-                    if (!valid) {
-                      console.log('not valid :(')
-                      updateReminderValidityCallback(i, false)
-                    } else {
-                      updateReminderCallback(newValues, i)
-                    }
-                  }}
-                />
-              ))}
-            </Stack>
-          </>
-        )}
-        {isSessionStarted && (
-          <>
-            <Heading size='md'>Reminders</Heading>
-            <Stack spacing={4} maxW='md'>
-              {session?.reminders.map((r, i) => (
-                <ActiveReminderManager
-                  reminder={r}
-                  key={i}
-                  completeTodo={(tn: string) => {
-                    completeTodoCallback(tn, i)
-                  }}
-                  uncompleteTodo={(tn: string) => {
-                    uncompleteTodoCallback(tn, i)
-                  }}
-                  completeChildTodo={(ctn: string) => {
-                    completeChildTodoCallback(ctn, i)
-                  }}
-                  uncompleteChildTodo={(ctn: string) => {
-                    uncompleteChildTodoCallback(ctn, i)
-                  }}
-                />
-              ))}
-            </Stack>
-          </>
-        )}
-      </Box>
-      {!isSessionStarted && (
-        <Box>
-          <Button
-            onClick={() => {
-              addReminderCallback({
-                name: 'New reminder',
-                interval: 30,
-                child: null,
-                todos: [
-                  {
-                    name: 'Look away from screen',
-                    complete: false,
-                  },
-                  {
-                    name: 'Drink water',
-                    complete: false,
-                  },
-                  {
-                    name: 'Desk yoga',
-                    complete: false,
-                  },
-                ],
-                nextDue: null,
-                completed: 0,
-              })
-            }}
-          >
-            Add Reminder
-          </Button>
+    <Center>
+      <Flex
+        direction='column'
+        spacing={4}
+        width='100%'
+        padding={2}
+        maxW='lg'
+        minW='md'
+        minH='100vh'
+        justifyContent='space-between'
+      >
+        <Box width='100%'>
+          {!isSessionStarted && (
+            <>
+              <Heading size='md'>Reminder Configs</Heading>
+              <Stack spacing={2}>
+                {session?.reminders.map((r, i) => (
+                  <ReminderConfig
+                    key={i}
+                    initialValues={{
+                      interval: r.interval,
+                      name: r.name,
+                      todos: r.todos?.map(t => t.name),
+                      child: !r.child
+                        ? undefined
+                        : {
+                            interval: r.child.interval,
+                            name: r.child.name,
+                            todos: r.child.todos?.map(t => t.name),
+                          },
+                    }}
+                    onUpdate={(newValues, valid) => {
+                      if (!valid) {
+                        console.log('not valid :(')
+                        updateReminderValidityCallback(i, false)
+                      } else {
+                        updateReminderCallback(newValues, i)
+                      }
+                    }}
+                  />
+                ))}
+              </Stack>
+            </>
+          )}
+          {isSessionStarted && (
+            <>
+              <Stack spacing={4}>
+                {session?.reminders.map((r, i) => (
+                  <ActiveReminderManager
+                    reminder={r}
+                    key={i}
+                    completeTodo={(tn: string) => {
+                      completeTodoCallback(tn, i)
+                    }}
+                    uncompleteTodo={(tn: string) => {
+                      uncompleteTodoCallback(tn, i)
+                    }}
+                    completeChildTodo={(ctn: string) => {
+                      completeChildTodoCallback(ctn, i)
+                    }}
+                    uncompleteChildTodo={(ctn: string) => {
+                      uncompleteChildTodoCallback(ctn, i)
+                    }}
+                  />
+                ))}
+              </Stack>
+            </>
+          )}
         </Box>
-      )}
-      <Box>
+        {!isSessionStarted && (
+          <Box>
+            <Button
+              width='100%'
+              onClick={() => {
+                addReminderCallback({
+                  name: 'New reminder',
+                  interval: 30,
+                  child: null,
+                  todos: [
+                    {
+                      name: 'Look away from screen',
+                      complete: false,
+                    },
+                    {
+                      name: 'Drink water',
+                      complete: false,
+                    },
+                    {
+                      name: 'Desk yoga',
+                      complete: false,
+                    },
+                  ],
+                  nextDue: null,
+                  completed: 0,
+                })
+              }}
+            >
+              Add Reminder
+            </Button>
+          </Box>
+        )}
         {session.stopped || !session.started ? (
           <Button
+            width='100%'
             onClick={() => {
               startSessionCallback()
             }}
@@ -227,6 +230,8 @@ const Home: BlitzPage = () => {
           </Button>
         ) : (
           <Button
+            width='100%'
+            borderRadius={0}
             onClick={() => {
               stopSessionCallback()
             }}
@@ -234,8 +239,8 @@ const Home: BlitzPage = () => {
             Stop
           </Button>
         )}
-      </Box>
-    </Stack>
+      </Flex>
+    </Center>
   )
 }
 
